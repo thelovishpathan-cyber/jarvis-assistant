@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06152b">
+<link rel="manifest" href="manifest.json">
+<title>JARVIS</title>
+<style>
+:root{color-scheme:dark;--cyan:#55dfff;--panel:#0c2342;--muted:#9bb6d2}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 20%,#123c69,#06152b 55%,#020812);font:16px system-ui;color:#eaf7ff;min-height:100vh}
+main{max-width:760px;margin:auto;padding:22px 16px 36px}.top{display:flex;justify-content:space-between;align-items:center}
+h1{letter-spacing:.22em;color:var(--cyan);font-size:24px;margin:6px 0}.status{font-size:12px;color:#9be9ff;border:1px solid #25658a;padding:6px 10px;border-radius:20px}
+.core{width:190px;height:190px;border-radius:50%;margin:26px auto 18px;display:grid;place-items:center;border:2px solid #43d9ff;box-shadow:0 0 25px #1ba9e877,inset 0 0 28px #1ba9e855;position:relative}
+.core:before,.core:after{content:"";position:absolute;border:1px solid #55dfff77;border-radius:50%;inset:12px}.core:after{inset:28px;border-style:dashed;animation:spin 18s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}.orb{font-size:44px;color:var(--cyan);text-shadow:0 0 20px #55dfff}
+.sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:20px}
+.panel{background:#0b203bcc;border:1px solid #1d5277;border-radius:16px;padding:14px;margin:12px 0}
+#log{height:250px;overflow:auto;display:flex;flex-direction:column;gap:10px}.msg{padding:10px 12px;border-radius:12px;max-width:90%;white-space:pre-wrap}.you{align-self:flex-end;background:#124d70}.jarvis{align-self:flex-start;background:#142f50;border:1px solid #245579}
+.controls{display:flex;gap:8px;margin-top:10px}input{min-width:0;flex:1;background:#06152b;border:1px solid #285578;border-radius:12px;padding:13px;color:white;font-size:16px}
+button{border:1px solid #38bce9;background:#0b4163;color:white;border-radius:12px;padding:12px 14px;font-weight:600}button:active{transform:scale(.98)}.mic{width:100%;margin:10px 0;background:#0d4262}.small{font-size:12px;color:var(--muted);line-height:1.5}
+</style>
+</head>
+<body><main>
+<div class="top"><h1>J.A.R.V.I.S.</h1><span class="status" id="status">SYSTEM ONLINE</span></div>
+<div class="core"><div class="orb">J</div></div>
+<div class="sub">PERSONAL AI INTERFACE · ANDROID EDITION</div>
+<section class="panel"><div id="log" aria-live="polite"><div class="msg jarvis">Hello. I am JARVIS. I can speak responses and understand supported voice input. My advanced AI connection is not configured yet.</div></div>
+<div class="controls"><input id="entry" placeholder="Type a message…" autocomplete="off"><button id="send">Send</button></div>
+<button class="mic" id="listen">🎙 Tap to speak</button>
+<div class="small">Voice recognition depends on browser and device support. This starter runs locally in your browser; it is not yet connected to an online AI model.</div></section>
+<section class="panel"><b>Quick commands</b><div class="controls"><button data-cmd="What time is it?">Time</button><button data-cmd="What is today's date?">Date</button><button data-cmd="Tell me what you can do.">Help</button></div></section>
+</main>
+<script>
+const log=document.querySelector('#log'), entry=document.querySelector('#entry'), status=document.querySelector('#status');
+function add(text,who){const d=document.createElement('div');d.className='msg '+who;d.textContent=text;log.appendChild(d);log.scrollTop=log.scrollHeight}
+function speak(t){if('speechSynthesis'in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.rate=1;u.pitch=1;speechSynthesis.speak(u)}}
+function reply(q){const s=q.toLowerCase();let a;
+if(s.includes('time'))a='The time on your device is '+new Date().toLocaleTimeString()+'.';
+else if(s.includes('date')||s.includes('day'))a='Today is '+new Date().toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'})+'.';
+else if(s.includes('hello')||s.includes('hi'))a='Hello. I am ready. What would you like me to do?';
+else if(s.includes('what can you do')||s.includes('help'))a='I can currently answer basic time and date commands, speak replies, and accept typed or supported voice input. The next development step is connecting a secure AI service and adding approved Android actions.';
+else a='I heard: “'+q+'”. My online AI brain is not connected yet. For now, try asking for the time, date, or help.';
+add(a,'jarvis');speak(a)}
+function send(){const q=entry.value.trim();if(!q)return;add(q,'you');entry.value='';reply(q)}
+document.querySelector('#send').onclick=send;entry.addEventListener('keydown',e=>{if(e.key==='Enter')send()});
+document.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>{entry.value=b.dataset.cmd;send()});
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+document.querySelector('#listen').onclick=()=>{if(!SR){status.textContent='VOICE UNSUPPORTED';add('Speech recognition is not available in this browser. Try Chrome on Android or use typing.','jarvis');return}
+const r=new SR();r.lang=navigator.language||'en-IN';r.interimResults=false;r.onstart=()=>status.textContent='LISTENING…';r.onerror=e=>{status.textContent='SYSTEM ONLINE';add('Voice input error: '+e.error,'jarvis')};r.onend=()=>status.textContent='SYSTEM ONLINE';r.onresult=e=>{const q=e.results[0][0].transcript;add(q,'you');reply(q)};r.start()};
+if('serviceWorker'in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script></body></html>
